@@ -7,6 +7,6 @@ right textures/bodies/skin/mosian_unleashed/mosian_unleashed_right.png
 texture-scale 1
 category All
 detach False
-hidden False
+hidden True
 damage-size 1
 offset 0 0
