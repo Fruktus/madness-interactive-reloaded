@@ -1,0 +1,49 @@
+name: Build and Setup .NET SDK 9 with Submodules
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Initialize and update git submodules
+        run: |
+          git submodule init
+          git submodule update --remote
+
+      - name: Set up .NET SDK 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.x'
+
+      - name: Install NuGet (automatically done by .NET SDK)
+        run: |
+          dotnet --version  # Verify that .NET SDK is installed correctly
+
+      - name: Install Mono
+        run: |
+          sudo apt install ca-certificates gnupg |
+          sudo gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/mono-official-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF |
+          echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list |
+          sudo apt update |
+          sudo apt install mono-complete
+
+      - name: Restore dependencies (optional, if you have a solution file)
+        working-directory: ./src/MadnessInteractiveReloaded
+        run: |
+          dotnet restore
+
+      - name: Build the project
+        working-directory: ./src/MadnessInteractiveReloaded
+        run: |
+          dotnet build --configuration Release
