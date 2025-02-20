@@ -1,0 +1,89 @@
+name: Build MIR
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Initialize and update git submodules
+        run: |
+          git submodule init
+          git submodule update --remote
+
+      - name: Set up .NET SDK 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.x'
+
+      - name: Build the project
+        working-directory: ./src/MadnessInteractiveReloaded
+        run: dotnet build --runtime linux-x64 -c Release
+
+      - name: Compress artifacts
+        working-directory: ./src/MadnessInteractiveReloaded/bin/Release/net9.0
+        run: |
+          tar cf - linux-x64 | xz -z --threads=0 - > MIR-linux-x64.tar.xz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MIR-linux-x64.tar.xz
+          path: |
+            ./src/MadnessInteractiveReloaded/bin/Release/net9.0/MIR-linux-x64.tar.xz
+      
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ./src/MadnessInteractiveReloaded/bin/Release/net9.0/MIR-linux-x64.tar.xz
+
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Initialize and update git submodules
+        run: |
+          git submodule init
+          git submodule update --remote
+
+      - name: Set up .NET SDK 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.x'
+
+      - name: Build the project
+        working-directory: ./src/MadnessInteractiveReloaded
+        run: dotnet build --runtime win-x64 -c Release
+
+      - name: Compress artifacts
+        working-directory: ./src/MadnessInteractiveReloaded/bin/Release/net9.0
+        run: |
+          tar cf - win-x64 | xz -z --threads=0 - > MIR-win-x64.tar.xz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MIR-win-x64.tar.xz
+          path: |
+            ./src/MadnessInteractiveReloaded/bin/Release/net9.0/MIR-win-x64.tar.xz
+      
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ./src/MadnessInteractiveReloaded/bin/Release/net9.0/MIR-win-x64.tar.xz
